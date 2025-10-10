@@ -1,0 +1,38 @@
+
+// server.js
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import dotenv from "dotenv";
+import authRoutes from "./routes/auth.js";
+import userRoutes from "./routes/user.js";
+
+dotenv.config(); // .env файл унших
+
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+
+// ================== MongoDB холболт ==================
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB холбогдлоо"))
+  .catch((err) => console.error("❌ MongoDB холболт алдаа:", err));
+
+// ================== Жишээ API ==================
+app.get("/", (req, res) => {
+  res.send("Backend API ажиллаж байна 🚀");
+});
+
+// Жишээ хэрэглэгчийн маршрут (дараа нь өргөтгөж болно)
+app.get("/api/users", (req, res) => {
+  res.json();
+});
+
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+
+// ================== Сервер ажиллуулах ==================
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
