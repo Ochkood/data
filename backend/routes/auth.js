@@ -8,24 +8,39 @@ const router = express.Router(); // 🟢 Энэ мөр хамгийн чухал
 // 📝 Register
 router.post("/register", async (req, res) => {
   try {
-    const { firstName, lastName, username, email, password } = req.body;
-    const existingUser = await User.findOne({ email });
-    if (existingUser)
-      return res.status(400).json({ message: "Email бүртгэлтэй байна" });
+    const { fullName, email, username, password } = req.body;
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({
-      firstName,
-      lastName,
-      username,
+    // 🔍 Имэйл давхцаж байгаа эсэхийг шалгах
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "Имэйл бүртгэлтэй байна" });
+    }
+
+    // 🔒 Нууц үг хаш хийх
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // 🆕 Шинэ хэрэглэгч үүсгэх
+    const newUser = new User({
+      fullName: fullName,
       email,
+      username,
       password: hashedPassword,
     });
 
-    await user.save();
-    res.status(201).json({ message: "Бүртгэл амжилттай", user });
+    await newUser.save();
+
+    res.status(201).json({
+      message: "Шинэ хэрэглэгч амжилттай бүртгэгдлээ",
+      user: {
+        id: newUser._id,
+        fullName: newUser.fullName,
+        email: newUser.email,
+      },
+    });
   } catch (error) {
-    res.status(500).json({ message: "Серверийн алдаа", error });
+    console.error("❌ REGISTER ERROR:", error);
+    res.status(500).json({ message: "Серверийн алдаа", error: error.message });
   }
 });
 
@@ -62,27 +77,12 @@ router.post("/login", async (req, res) => {
   }
 });
 
-
-// 🔑 Login
-// router.post("/login", async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-//     const user = await User.findOne({ email });
-//     if (!user) return res.status(404).json({ message: "Ийм хэрэглэгч алга" });
-
-//     const isMatch = await bcrypt.compare(password, user.password);
-//     if (!isMatch) return res.status(400).json({ message: "Нууц үг буруу" });
-
-//     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-
-//     res.status(200).json({
-//       message: "Нэвтрэлт амжилттай",
-//       token,
-//       user: { id: user._id, username: user.username, email: user.email },
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: "Серверийн алдаа", error });
-//   }
-// });
+// 🧩 Тест route — API ажиллаж байгаа эсэхийг шалгах
+router.get("/test", (req, res) => {
+  res.json({
+    message: "Auth API ажиллаж байна 🚀",
+    time: new Date().toISOString(),
+  });
+});
 
 export default router; // 🟢 Энэ мөрийг хамгийн доор байлгаарай!

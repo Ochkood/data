@@ -1,26 +1,105 @@
 @import "tailwindcss";
+@plugin "tailwindcss-animate";
 
+/* 🌞 Light mode default */
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* 🌙 Dark mode (Tailwind class ашиглан) */
+html.dark {
+  --background: #1f2937;
+  --foreground: #ededed;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@keyframes fade-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Dialog overlay fix */
+[data-state="open"] .dialog-overlay {
+  background-color: rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
+/* TipTap editor base */
+.ProseMirror {
+  outline: none;
+  min-height: 250px;
+  line-height: 1.6;
+  font-size: 16px;
+  color: #111827; /* text-gray-900 */
+  padding: 0;
+}
+
+/* Dark mode */
+.dark .ProseMirror {
+  color: #f3f4f6;
+}
+
+/* Paragraph spacing */
+.ProseMirror p {
+  margin: 0 0 0.5em 0;
+}
+
+/* Bullet list */
+.ProseMirror ul {
+  list-style-type: disc;
+  padding-left: 1.5em;
+}
+
+/* Blockquote style */
+.ProseMirror blockquote {
+  border-left: 4px solid #ddd;
+  margin-left: 0;
+  padding-left: 1em;
+  color: #555;
+}
+.dark .ProseMirror blockquote {
+  border-left-color: #666;
+  color: #ccc;
+}
+
+/* Code block highlight */
+.ProseMirror pre {
+  background: #f6f8fa;
+  padding: 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+.dark .ProseMirror pre {
+  background: #1e1e1e;
+}
+
+
+
+/* Center Dialog content */
+.dialog-content {
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out;
+}
+
+/* 🧠 General body styles */
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  transition: background-color 0.3s ease, color 0.3s ease;
 }

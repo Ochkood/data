@@ -2,32 +2,37 @@
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 
+// ✅ Хэрэглэгчийн токен шалгах middleware
 export const protect = async (req, res, next) => {
   let token;
 
-  // Header дотор Authorization байгаа эсэхийг шалгах
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
+  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
     try {
-      // "Bearer TOKEN" → TOKEN хэсгийг салгах
       token = req.headers.authorization.split(" ")[1];
-
-      // Токеныг шалгах
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Токеноос хэрэглэгчийн ID-г гаргаж, req.user-д дамжуулах
       req.user = await User.findById(decoded.id).select("-password");
+      if (!req.user) {
+        return res.status(401).json({ message: "User not found" });
+      }
 
-      next(); // дараагийн middleware рүү шилжих
-    } catch (error) {
-      console.error("Token error:", error);
-      res.status(401).json({ message: "Token буруу эсвэл хугацаа дууссан" });
+      next();
+    } catch (err) {
+      console.error("❌ Invalid token:", err);
+      return res.status(401).json({ message: "Invalid token" });
     }
+  } else {
+    return res.status(401).json({ message: "No token provided" });
   }
+};
 
-  if (!token) {
-    res.status(401).json({ message: "Token байхгүй байна" });
+// ✅ Admin хэрэглэгчийг шалгах middleware
+export const verifyAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Authentication required" });
   }
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Admin эрх шаардлагатай" });
+  }
+  next();
 };
