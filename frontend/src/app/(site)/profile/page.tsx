@@ -9,14 +9,12 @@ import {
   Edit3,
   Briefcase,
   Phone,
-  Globe,
   MapPin,
   Facebook,
   Twitter,
   Linkedin,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import ProfilePostCard from "@/components/ProfilePostCard";
 import {
   ResponsiveContainer,
   BarChart,
@@ -29,6 +27,7 @@ import {
   Area,
 } from "recharts";
 import SavedPosts from "@/components/SavedPosts";
+import NewsCardCompact from "@/components/NewsCardCompact";
 
 type Post = {
   _id: string;
@@ -202,7 +201,7 @@ export default function ProfileTabsPage() {
                 {user?.bio && (
                   <div>
                     <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                      Танилцуулга
+                      ТАНИЛЦУУЛГА
                     </h3>
                     <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                       {user.bio}
@@ -237,18 +236,6 @@ export default function ProfileTabsPage() {
                         <span>{user.contact.phone}</span>
                       </div>
                     )}
-                    {/* {user?.contact?.website && (
-                      <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                        <Globe size={16} />
-                        <a
-                          href={user.contact.website}
-                          target="_blank"
-                          className="text-teal-600 hover:underline"
-                        >
-                          {user.contact.website}
-                        </a>
-                      </div>
-                    )} */}
                     {user?.contact?.address && (
                       <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                         <MapPin size={16} />
@@ -328,9 +315,9 @@ export default function ProfileTabsPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 gap-6">
                 {posts.map((p) => (
-                  <ProfilePostCard key={p._id} post={p} />
+                  <NewsCardCompact key={p._id} post={p} />
                 ))}
               </div>
             )}

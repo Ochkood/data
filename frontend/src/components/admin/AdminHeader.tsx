@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, LogOut, Search, User } from "lucide-react";
+import { Bell, LayoutDashboard, LogOut, Search, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -33,6 +33,7 @@ export default function AdminHeader() {
     <header className="flex items-center justify-between px-6 py-3 border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sticky top-0 z-40">
       {/* 🔹 Left: Logo / Title */}
       <div className="flex items-center gap-3">
+        <LayoutDashboard color="teal"/>
         <h1
           className="text-xl font-bold text-teal-700 dark:text-teal-400 cursor-pointer"
           onClick={() => router.push("/admin")}
@@ -78,7 +79,7 @@ export default function AdminHeader() {
           <DropdownMenuTrigger asChild>
             <Avatar className="cursor-pointer ring-2 ring-transparent hover:ring-teal-500 transition">
               <AvatarImage src={user?.profileImage} alt="Admin" />
-              <AvatarFallback>{user?.firstName?.charAt(0) || "A"}</AvatarFallback>
+              <AvatarFallback>{user?.fullName.charAt(0) || "A"}</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
 
@@ -88,7 +89,7 @@ export default function AdminHeader() {
             className="min-w-[220px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-xl rounded-xl p-2"
           >
             <DropdownMenuLabel className="font-semibold text-gray-800 dark:text-gray-200 truncate">
-              {user?.firstName} {user?.lastName}
+              {user?.fullName}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push("/profile")}>

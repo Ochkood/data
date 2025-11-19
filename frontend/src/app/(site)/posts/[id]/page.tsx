@@ -186,7 +186,7 @@ export default function PostDetailPage() {
       {/* 📄 Content */}
       <Card className="border-none shadow-none bg-transparent">
         <CardContent className="p-2 prose dark:prose-invert max-w-none leading-relaxed text-[16px]">
-          <div
+          <div className="ProseMirror max-w-none"
             dangerouslySetInnerHTML={{
               __html:
                 typeof post.content === "string"

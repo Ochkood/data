@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import Loader from "../Loader";
+import MiniLoader from "../MiniLoader";
 
 type Banner = {
   _id: string;
@@ -85,7 +87,7 @@ export default function RightSidebar() {
 
       {/* 🔥 Trending Posts */}
       <div>
-        <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-3 border-b border-gray-200 dark:border-gray-700 pb-1">
+        <h3 className="font-semibold text-gray-800 dark:text-white mb-3 border-b border-gray-200 dark:border-gray-700 pb-1 ">
           🔥 Тренд мэдээ
         </h3>
         <ul className="space-y-3">
@@ -97,14 +99,14 @@ export default function RightSidebar() {
             >
               <div className="font-medium">{p.title}</div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                {p.author?.firstName} · {p.category?.name || "Ангилалгүй"}
+                {p.author?.fullName} · {p.category?.name || "Ангилалгүй"}
               </div>
             </li>
           ))}
           {trending.length === 0 && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Тренд мэдээ одоогоор алга.
-            </p>
+            <div className="flex justify-center items-center w-full mx-auto my-50 h-300px">
+              <MiniLoader />
+            </div>
           )}
         </ul>
       </div>

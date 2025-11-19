@@ -8,9 +8,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectTrigger,
@@ -18,8 +18,11 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Pencil } from "lucide-react";
+import Image from "next/image";
+import { Edit, Loader2, UploadCloud } from "lucide-react";
+import SimpleEditor from "@/components/editor/SimpleEditor";
 
 export function EditPostDialog({
   post,
@@ -31,54 +34,87 @@ export function EditPostDialog({
   onSave: (updated: any) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState(post.title);
-  const [content, setContent] = useState(post.content);
+  const [title, setTitle] = useState(post.title || "");
+  const [content, setContent] = useState(post.content || "");
   const [category, setCategory] = useState(post.category?._id || "");
-  const [isApproved, setIsApproved] = useState(post.isApproved);
+  const [isEditorPick, setIsEditorPick] = useState(post.isEditorPick || false);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(post.image || null);
+  const [preview, setPreview] = useState<string>(post.image || "");
   const [loading, setLoading] = useState(false);
 
+  // ✅ Handle file select or drag-drop
   const handleFileChange = (file: File) => {
     setImageFile(file);
     const reader = new FileReader();
-    reader.onload = (e) => setPreview(e.target?.result as string);
+    reader.onloadend = () => setPreview(reader.result as string);
     reader.readAsDataURL(file);
   };
 
-  const handleUpdate = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return toast.error("Token not found!");
-
+  // ✅ Upload image to Cloudinary
+  const uploadToCloudinary = async (file: File) => {
+    const CLOUD_NAME = "dgwzf6ijf";
+    const UPLOAD_PRESET = "content_image";
     const formData = new FormData();
-    formData.append("title", title);
-    formData.append("content", content);
-    formData.append("category", category);
-    formData.append("isApproved", isApproved ? "true" : "false");
-    if (imageFile) formData.append("image", imageFile);
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
 
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+      { method: "POST", body: formData }
+    );
+    const data = await res.json();
+    return data.secure_url;
+  };
+
+  // ✅ Handle Save
+  const handleSave = async () => {
+    if (!title || !content) {
+      toast.error("Гарчиг болон агуулга шаардлагатай!");
+      return;
+    }
+
+    setLoading(true);
     try {
-      setLoading(true);
+      const token = localStorage.getItem("token");
+      let imageUrl = preview;
+
+      // upload new image if selected
+      if (imageFile) {
+        imageUrl = await uploadToCloudinary(imageFile);
+      }
+
+      const body = {
+        title,
+        content,
+        category,
+        isEditorPick,
+        image: imageUrl,
+      };
+
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE}/admin/posts/${post._id}`,
         {
           method: "PATCH",
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
         }
       );
 
       const data = await res.json();
+
       if (res.ok) {
-        toast.success("Мэдээ шинэчлэгдлээ ✅");
-        onSave(data.updatedPost || data.post);
+        toast.success("Мэдээ амжилттай шинэчлэгдлээ!");
+        onSave(data.post);
         setOpen(false);
       } else {
-        toast.error(data.message || "Шинэчлэхэд алдаа гарлаа");
+        toast.error(data.message || "Шинэчлэхэд алдаа гарлаа.");
       }
     } catch (err) {
-      console.error("❌ UPDATE ERROR:", err);
-      toast.error("Сервертэй холбогдож чадсангүй");
+      console.error(err);
+      toast.error("Серверийн холболтын алдаа.");
     } finally {
       setLoading(false);
     }
@@ -88,125 +124,142 @@ export function EditPostDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="icon">
-          <Pencil size={16} />
+          <Edit size={16} />
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-lg rounded-xl shadow-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
-        <DialogHeader className="border-b border-gray-200 dark:border-gray-700 pb-3 mb-3">
-          <DialogTitle className="text-lg font-semibold flex items-center gap-2">
-            📝 Мэдээ засах
-          </DialogTitle>
+      <DialogContent className="max-w-4xl max-h-[90vh] bg-white overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>📝 Мэдээ засах</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-5">
-          {/* 🏷️ Title */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              Гарчиг
-            </label>
-            <Input
-              placeholder="Мэдээний гарчиг"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="border-gray-300 dark:border-gray-700"
-            />
+        {/* Title */}
+        <div>
+          <Label>Гарчиг</Label>
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Мэдээний гарчиг..."
+            className="mt-1"
+          />
+        </div>
+
+        {/* Category */}
+        <div>
+          <Label>Ангилал</Label>
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger className="w-full bg-white mt-1">
+              <SelectValue placeholder="Ангилал сонгох..." />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              {categories.map((cat) => (
+                <SelectItem key={cat._id} value={cat._id}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Content Editor */}
+        <div>
+          <Label>Агуулга</Label>
+          <div className="mt-2 border rounded-lg overflow-hidden">
+            <SimpleEditor value={content} onChange={setContent} />
           </div>
+        </div>
 
-          {/* 📝 Content */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              Агуулга
-            </label>
-            <Textarea
-              placeholder="Мэдээний агуулга..."
-              rows={6}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="border-gray-300 dark:border-gray-700"
-            />
-          </div>
-
-          {/* 🧩 Category */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              Ангилал
-            </label>
-            <Select value={category} onValueChange={(val) => setCategory(val)}>
-              <SelectTrigger className="border-gray-300 dark:border-gray-700">
-                <SelectValue placeholder="Ангилал сонгох" />
-              </SelectTrigger>
-              <SelectContent className="bg-white dark:bg-gray-800">
-                {categories.map((cat) => (
-                  <SelectItem key={cat._id} value={cat._id}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* 🟢 Status */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              Төлөв
-            </label>
-            <Select
-              value={isApproved ? "approved" : "pending"}
-              onValueChange={(val) => setIsApproved(val === "approved")}
-            >
-              <SelectTrigger className="border-gray-300 dark:border-gray-700">
-                <SelectValue placeholder="Төлөв" />
-              </SelectTrigger>
-              <SelectContent className="bg-white dark:bg-gray-800">
-                <SelectItem value="approved">✅ Батлагдсан</SelectItem>
-                <SelectItem value="pending">🕓 Хүлээгдэж буй</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* 🖼️ Image */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              Зураг
-            </label>
-
-            {preview && (
-              <div className="relative w-full rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700 shadow-sm">
+        {/* Image Upload */}
+        <div>
+          <Label>Нүүр зураг</Label>
+          <div
+            className={`border-2 border-dashed rounded-xl p-4 mt-2 text-center transition-all duration-300 cursor-pointer hover:border-teal-500`}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (e.dataTransfer.files[0])
+                handleFileChange(e.dataTransfer.files[0]);
+            }}
+          >
+            {preview ? (
+              <div className="relative">
                 <img
                   src={preview}
                   alt="preview"
-                  className="w-full h-48 object-cover"
+                  className="w-full h-56 object-cover rounded-lg shadow-md border"
                 />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="absolute top-2 right-2 bg-white/80 hover:bg-white text-red-600"
+                  onClick={() => {
+                    setPreview("");
+                    setImageFile(null);
+                  }}
+                >
+                  ✕
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-gray-500">
+                <UploadCloud size={32} className="mb-2 text-teal-500" />
+                <p className="font-medium">Нүүр зураг оруулна уу</p>
+                <p className="text-xs text-gray-400">
+                  JPEG, PNG формат — 50MB хүртэл
+                </p>
+                <label className="mt-3 inline-block px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 cursor-pointer transition">
+                  Зураг сонгох
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) =>
+                      e.target.files && handleFileChange(e.target.files[0])
+                    }
+                  />
+                </label>
               </div>
             )}
-
-            <label className="block mt-1 cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) =>
-                  e.target.files && handleFileChange(e.target.files[0])
-                }
-              />
-              <div className="border border-dashed border-gray-400 hover:border-teal-500 text-center rounded-md py-3 text-sm text-gray-500 transition bg-gray-50 dark:bg-gray-800">
-                {imageFile ? "🖼️ Шинэ зураг сонгогдсон" : "Зураг солих"}
-              </div>
-            </label>
-          </div>
-
-          {/* 💾 Save */}
-          <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-            <Button
-              onClick={handleUpdate}
-              disabled={loading}
-              className="w-full bg-teal-600 hover:bg-teal-700 text-white rounded-lg py-2.5 text-base font-medium transition"
-            >
-              {loading ? "Шинэчилж байна..." : "💾 Хадгалах"}
-            </Button>
           </div>
         </div>
+
+        {/* Editor Pick Switch */}
+        <div className="flex items-center justify-between border-t pt-4 mt-2">
+          <Label className="flex items-center gap-2">
+            <span>Редакторын сонголт</span>
+            {isEditorPick ? (
+              <span className="text-green-600 text-sm font-medium">
+                (идэвхтэй)
+              </span>
+            ) : (
+              <span className="text-gray-400 text-sm">(идэвхгүй)</span>
+            )}
+          </Label>
+          <Switch
+            checked={isEditorPick}
+            onCheckedChange={setIsEditorPick}
+            className={`${
+              isEditorPick
+                ? "data-[state=checked]:bg-green-500"
+                : "data-[state=unchecked]:bg-gray-300"
+            }`}
+          />
+        </div>
+
+        {/* Save Button */}
+        <Button
+          onClick={handleSave}
+          disabled={loading}
+          className="w-full mt-4 bg-teal-600 hover:bg-teal-700 text-white rounded-xl"
+        >
+          {loading ? (
+            <>
+              <Loader2 size={18} className="animate-spin" /> Хадгалж байна...
+            </>
+          ) : (
+            "💾 Хадгалах"
+          )}
+        </Button>
       </DialogContent>
     </Dialog>
   );

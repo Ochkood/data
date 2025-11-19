@@ -81,10 +81,10 @@ export default function FollowButton({
             disabled={loading}
             onClick={toggleFollow}
             variant={isFollowing ? "outline" : "default"}
-            className={`flex items-center gap-2 text-xs font-medium rounded-md transition-all
+            className={`flex items-center gap-2 text-xs font-medium rounded-full transition-all
               ${isFollowing
-                ? "border-gray-400 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
-                : "bg-white hover:bg-red-600 text-white"} 
+                ? "border-gray-400 text-gray-600 hover:bg-gray-100 hover:cursor-pointer dark:hover:bg-gray-800"
+                : "bg-teal-600 hover:bg-red-600 hover:cursor-pointer text-white"} 
               ${className}`}
           >
             {loading ? (
@@ -92,19 +92,19 @@ export default function FollowButton({
             ) : isFollowing ? (
               <>
                 <UserCheck size={14} />
-                ДАГАЖ БАЙНА
+                Following
               </>
             ) : (
               <>
                 <UserPlus size={14} />
-                {label || "ДАГАХ"}
+                {label || "Follow"}
               </>
             )}
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="top" className="text-xs">
+        {/* <TooltipContent side="top" className="text-xs bg-white">
           {isFollowing ? "Дагахаа болих" : "Хэрэглэгчийг дагах"}
-        </TooltipContent>
+        </TooltipContent> */}
       </Tooltip>
     </TooltipProvider>
   );

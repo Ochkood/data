@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 // import { getColumns } from "@/components/admin/users/columns"; // 👈 өмнөх columns.tsx
 import { Shield, Trash2, Search, Facebook } from "lucide-react";
 import { AnimatedConfirmDialog } from "@/components/ui/AnimatedConfirmDialog";
+import Loader from "@/components/Loader";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -101,8 +102,8 @@ export default function AdminUsersPage() {
 
   if (loading)
     return (
-      <div className="flex items-center justify-center min-h-[60vh] text-gray-500">
-        Уншиж байна...
+      <div className="flex justify-center items-center w-full m-auto h-full">
+        <Loader />
       </div>
     );
 

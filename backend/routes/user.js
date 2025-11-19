@@ -14,8 +14,8 @@ const router = express.Router();
 router.get("/me", protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id)
-      .populate("following", "_id firstName lastName profileImage")
-      .populate("followers", "_id firstName lastName profileImage")
+      .populate("following", "_id fullName profileImage")
+      .populate("followers", "_id fullName profileImage")
       .select("-password");
 
     if (!user) return res.status(404).json({ message: "Хэрэглэгч олдсонгүй" });
@@ -164,7 +164,7 @@ router.get("/:id", async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const posts = await Post.find({ author: user._id })
-      .populate("author", "firstName lastName profileImage")
+      .populate("author", "fullName profileImage")
       .populate("category", "name slug")
       .sort({ createdAt: -1 });
 
@@ -246,7 +246,7 @@ router.get("/:id/followers", async (req, res) => {
   try {
     const user = await User.findById(req.params.id).populate(
       "followers",
-      "_id firstName lastName profileImage"
+      "_id fullName profileImage"
     );
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json({ followers: user.followers || [] });
@@ -261,7 +261,7 @@ router.get("/:id/following", async (req, res) => {
   try {
     const user = await User.findById(req.params.id).populate(
       "following",
-      "_id firstName lastName profileImage"
+      "_id fullName profileImage"
     );
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json({ following: user.following || [] });

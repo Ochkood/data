@@ -49,7 +49,7 @@ export default function AdminSidebar() {
           variant="ghost"
           size="icon"
           onClick={() => setCollapsed(!collapsed)}
-          className="text-gray-500 hover:text-teal-600"
+          className="text-gray-500 hover:text-teal-600 hover:cursor-pointer"
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </Button>

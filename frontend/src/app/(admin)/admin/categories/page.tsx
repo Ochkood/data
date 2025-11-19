@@ -9,6 +9,7 @@ import { Plus, Search, Trash2, Edit3, Loader2 } from "lucide-react";
 import { AnimatedConfirmDialog } from "@/components/ui/AnimatedConfirmDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import Loader from "@/components/Loader";
 
 type Cat = { _id: string; name: string; slug: string; color?: string };
 
@@ -140,7 +141,9 @@ export default function AdminCategoriesPage() {
             {loading ? (
               <TableRow>
                 <TableCell colSpan={4} className="py-10 text-center text-gray-500">
-                  Уншиж байна...
+                  <div className="flex justify-center items-center w-full m-auto h-full">
+                    <Loader />
+                  </div>
                 </TableCell>
               </TableRow>
             ) : filtered.length ? (
@@ -180,7 +183,9 @@ export default function AdminCategoriesPage() {
             ) : (
               <TableRow>
                 <TableCell colSpan={4} className="py-8 text-center text-gray-500">
-                  Ангилал олдсонгүй.
+                  <div className="flex justify-center items-center w-full m-auto h-full">
+                    <Loader />
+                  </div>
                 </TableCell>
               </TableRow>
             )}

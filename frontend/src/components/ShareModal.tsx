@@ -44,7 +44,7 @@ export default function ShareModal({
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md bg-amber-50">
                 <DialogHeader>
                     <DialogTitle className="text-lg font-semibold">Нийтлэл хуваалцах</DialogTitle>
                 </DialogHeader>

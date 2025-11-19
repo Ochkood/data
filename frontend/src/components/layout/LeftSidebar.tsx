@@ -178,10 +178,10 @@ export default function LeftSidebar() {
                           f.firstName || "User"
                         )}&background=0D8ABC&color=fff&size=40`
                     }
-                    alt={f.firstName}
+                    alt={f.fullName}
                     className="w-7 h-7 rounded-full object-cover border border-gray-300"
                   />
-                  <span>{f.firstName || "User"}</span>
+                  <span>{f.fullName || "User"}</span>
                 </li>
               ))}
             </ul>

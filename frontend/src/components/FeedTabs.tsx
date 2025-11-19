@@ -7,6 +7,7 @@ import PostCard from "./PostCard";
 import { toast } from "sonner";
 import { fetchAllPosts, fetchFollowingPosts, fetchEditorPosts } from "@/lib/api";
 import { Newspaper, Users, Puzzle, ArrowUp, Database } from "lucide-react";
+import PostCardModern from "./PostCardModern";
 
 export default function FeedTabs() {
   const [all, setAll] = useState<any[]>([]);
@@ -102,7 +103,7 @@ export default function FeedTabs() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <PostCard post={p} />
+          <PostCardModern post={p} />
         </motion.div>
       ))
     ) : (

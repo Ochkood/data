@@ -140,6 +140,21 @@ router.get("/search", async (req, res) => {
 });
 
 
+// 👤 Хэрэглэгчийн оруулсан мэдээнүүд — энэ route-г түрүүлж бичих ёстой!
+router.get("/my-posts", protect, async (req, res) => {
+  try {
+    const posts = await Post.find({ author: req.user._id })
+      .populate("category", "name color")
+      .sort({ createdAt: -1 });
+
+    res.json({ posts });
+  } catch (err) {
+    console.error("❌ Fetch my posts error:", err);
+    res.status(500).json({ message: "Серверийн алдаа", error: err.message });
+  }
+});
+
+
 
 /* -------------------------------------------------------------------------- */
 /* 🧩 4. Нэг пост дэлгэрэнгүй                                               */
@@ -286,6 +301,34 @@ router.patch("/:id/pick", protect, verifyAdmin, async (req, res) => {
   } catch (err) {
     console.error("❌ PICK ERROR:", err);
     res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+
+// ✏️ Хэрэглэгч өөрийн мэдээг засах
+router.patch("/:id", protect, async (req, res) => {
+  try {
+    const { title, content, category, image } = req.body;
+    const post = await Post.findById(req.params.id);
+
+    if (!post) return res.status(404).json({ message: "Мэдээ олдсонгүй" });
+
+    // ✅ зөвхөн тухайн хэрэглэгч л өөрийн мэдээг засах эрхтэй
+    if (post.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Танд энэ мэдээг засах эрх байхгүй." });
+    }
+
+    post.title = title || post.title;
+    post.content = content || post.content;
+    post.category = category || post.category;
+    post.image = image || post.image;
+
+    await post.save();
+
+    res.json({ message: "Мэдээ амжилттай шинэчлэгдлээ!", updatedPost: post });
+  } catch (err) {
+    console.error("❌ Update post error:", err);
+    res.status(500).json({ message: "Серверийн алдаа", error: err.message });
   }
 });
 

@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { AnimatedConfirmDialog } from "@/components/ui/AnimatedConfirmDialog";
 import { cn } from "@/lib/utils";
+import Loader from "@/components/Loader";
 
 type Banner = {
   _id: string;
@@ -144,7 +145,9 @@ export default function AdminBannersPage() {
             {loading ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-6">
-                  Уншиж байна...
+                  <div className="flex justify-center items-center w-full m-auto h-full">
+                    <Loader />
+                  </div>
                 </TableCell>
               </TableRow>
             ) : banners.length ? (
@@ -183,11 +186,10 @@ export default function AdminBannersPage() {
                   <TableCell className="capitalize">{b.position}</TableCell>
                   <TableCell>
                     <span
-                      className={`px-2 py-0.5 text-xs rounded-full ${
-                        b.isActive
+                      className={`px-2 py-0.5 text-xs rounded-full ${b.isActive
                           ? "bg-teal-100 text-teal-700 dark:bg-teal-700/30 dark:text-teal-300"
                           : "bg-gray-100 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400"
-                      }`}
+                        }`}
                     >
                       {b.isActive ? "Идэвхтэй" : "Идэвхгүй"}
                     </span>

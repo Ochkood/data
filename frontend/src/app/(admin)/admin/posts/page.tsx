@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -19,9 +20,9 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Search, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Search, Trash2, Star, CheckCircle, XCircle, Plus, Edit3 } from "lucide-react";
 import { AnimatedConfirmDialog } from "@/components/ui/AnimatedConfirmDialog";
-import { EditPostDialog } from "@/components/admin/EditPostDialog";
+import Loader from "@/components/Loader";
 
 export default function AdminPostsPage() {
   const [posts, setPosts] = useState<any[]>([]);
@@ -31,9 +32,9 @@ export default function AdminPostsPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState("all");
+  const router = useRouter();
 
-  // ✅ Fetch Posts + Categories
+  // ✅ Fetch posts + categories
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -44,31 +45,38 @@ export default function AdminPostsPage() {
         }
 
         const [postRes, catRes] = await Promise.all([
-          fetch(
-            `${process.env.NEXT_PUBLIC_API_BASE}/admin/posts?status=${statusFilter}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          ),
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE}/admin/posts`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
           fetch(`${process.env.NEXT_PUBLIC_API_BASE}/admin/categories`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
-
-        if (postRes.headers.get("content-type")?.includes("text/html")) {
-          throw new Error("Invalid response (HTML received instead of JSON)");
-        }
 
         const [postData, catData] = await Promise.all([
           postRes.json(),
           catRes.json(),
         ]);
 
-        if (postRes.ok) setPosts(postData.posts || []);
-        else toast.error(postData.message || "Мэдээ татахад алдаа гарлаа");
+        if (postRes.ok) {
+          // API нь массив хэлбэртэй хариу ирүүлдэг тул нөхцөлөөр шалгаж онооно
+          const postsArray = Array.isArray(postData)
+            ? postData
+            : postData.posts || [];
+          setPosts(postsArray);
+          console.log(postData)
+        } else {
+          toast.error(postData.message || "Мэдээ татахад алдаа гарлаа");
+        }
 
-        if (catRes.ok) setCategories(catData.categories || []);
-        else toast.error(catData.message || "Ангилал татахад алдаа гарлаа");
+        if (catRes.ok) {
+        const catsArray = Array.isArray(catData)
+          ? catData
+          : catData.categories || [];
+        setCategories(catsArray);
+      }
       } catch (err) {
-        console.error("❌ Fetch error:", err);
+        console.error(err);
         toast.error("Сервертэй холбогдож чадсангүй.");
       } finally {
         setLoading(false);
@@ -76,9 +84,9 @@ export default function AdminPostsPage() {
     };
 
     fetchData();
-  }, [statusFilter]);
+  }, []);
 
-  // ✅ Filter + Search
+  // ✅ Filter + Pagination
   const filtered = useMemo(() => {
     return posts
       .filter((p) => {
@@ -106,7 +114,6 @@ export default function AdminPostsPage() {
         selectedCategory === "all" ||
         p.category?._id === selectedCategory ||
         p.category?.name?.toLowerCase() === selectedCategory.toLowerCase();
-
       return (titleMatch || authorMatch) && categoryMatch;
     }).length / rowsPerPage
   );
@@ -139,7 +146,7 @@ export default function AdminPostsPage() {
     }
   };
 
-  // ✅ Delete post
+  // ✅ Delete
   const handleDelete = async (id: string) => {
     const token = localStorage.getItem("token");
     try {
@@ -161,18 +168,28 @@ export default function AdminPostsPage() {
 
   if (loading)
     return (
-      <div className="flex items-center justify-center min-h-[60vh] text-gray-500">
-        Мэдээ татаж байна...
+      <div className="flex justify-center items-center w-full m-auto h-full">
+        <Loader />
       </div>
+
     );
 
   return (
     <div className="p-6">
-      <h2 className="text-xl font-semibold mb-5 flex items-center gap-2">
-        📰 Мэдээний жагсаалт
-      </h2>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          📰 Мэдээний жагсаалт
+        </h2>
+        <Button
+          className="bg-teal-600 hover:bg-teal-700 text-white flex items-center gap-2"
+          onClick={() => router.push("/admin/posts/new")}
+        >
+          <Plus size={16} /> Шинэ мэдээ оруулах
+        </Button>
+      </div>
 
-      {/* 🔍 Filter row */}
+      {/* Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         {/* Search */}
         <div className="relative w-full sm:max-w-xs">
@@ -191,58 +208,44 @@ export default function AdminPostsPage() {
           />
         </div>
 
-        {/* Category + Status filter */}
-        <div className="flex items-center gap-2">
-          <Select
-            value={selectedCategory}
-            onValueChange={(val) => {
-              setSelectedCategory(val);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Ангилал" />
-            </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-gray-800">
-              <SelectItem value="all">Бүх ангилал</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat._id} value={cat._id}>
-                  {cat.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={statusFilter}
-            onValueChange={(val) => setStatusFilter(val)}
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Төлөв" />
-            </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-gray-800">
-              <SelectItem value="all">Бүх мэдээ</SelectItem>
-              <SelectItem value="pending">Хүлээгдэж буй</SelectItem>
-              <SelectItem value="approved">Батлагдсан</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Category filter */}
+        <Select
+          value={selectedCategory}
+          onValueChange={(val) => {
+            setSelectedCategory(val);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Бүх ангилал" />
+          </SelectTrigger>
+          <SelectContent className="bg-white dark:bg-gray-800">
+            <SelectItem value="all">Бүх ангилал</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat._id} value={cat._id}>
+                {cat.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* 📋 Table */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+      {/* Table */}
+      <div className="rounded-xl border border-gray-200 overflow-hidden shadow-sm">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Зураг</TableHead>
+              <TableHead>Нүүр зураг</TableHead>
               <TableHead>Гарчиг</TableHead>
               <TableHead>Ангилал</TableHead>
               <TableHead>Зохиогч</TableHead>
+              <TableHead>EditorPick</TableHead>
               <TableHead>Төлөв</TableHead>
               <TableHead>Огноо</TableHead>
               <TableHead>Үйлдэл</TableHead>
             </TableRow>
           </TableHeader>
+
           <TableBody>
             {filtered.length > 0 ? (
               filtered.map((post) => (
@@ -251,18 +254,25 @@ export default function AdminPostsPage() {
                     <img
                       src={post.image || "/default-news.png"}
                       alt={post.title}
-                      className="w-28 h-20 object-cover rounded-md border"
+                      className="w-24 h-16 object-cover rounded-md border"
                     />
                   </TableCell>
                   <TableCell className="max-w-xs">
                     <div className="font-medium line-clamp-2">{post.title}</div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {post.likes?.length || 0} лайк ·{" "}
-                      {post.comments?.length || 0} сэтгэгдэл
-                    </div>
                   </TableCell>
                   <TableCell>{post.category?.name || "—"}</TableCell>
                   <TableCell>{post.author?.fullName || "—"}</TableCell>
+
+                  <TableCell>
+                    {post.isEditorPick ? (
+                      <div className="flex items-center text-yellow-600">
+                        <Star size={16} className="mr-1 fill-yellow-400" /> Тийм
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">Үгүй</span>
+                    )}
+                  </TableCell>
+
                   <TableCell>
                     {post.isApproved ? (
                       <span className="bg-green-100 text-green-700 px-2 py-0.5 text-xs rounded-full">
@@ -274,45 +284,54 @@ export default function AdminPostsPage() {
                       </span>
                     )}
                   </TableCell>
+
                   <TableCell>
                     {new Date(post.createdAt).toLocaleDateString("mn-MN")}
                   </TableCell>
+
+                  {/* ✅ Actions */}
                   <TableCell className="flex gap-2">
-                    {!post.isApproved && (
+                    {/* ✏️ Засах */}
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => router.push(`/admin/posts/edit/${post._id}`)}
+                    >
+                      <Edit3 size={16} className="text-blue-600" />
+                    </Button>
+
+                    {/* ✅ Баталгаажуулах / Цуцлах */}
+                    {!post.isApproved ? (
                       <>
                         <Button
                           size="icon"
                           variant="outline"
+                          className="hover:bg-green-50"
                           onClick={() => handleApproval(post._id, true)}
                         >
-                          <CheckCircle
-                            size={16}
-                            className="text-green-600 hover:text-green-700"
-                          />
+                          <CheckCircle size={16} className="text-green-600" />
                         </Button>
                         <Button
                           size="icon"
                           variant="outline"
+                          className="hover:bg-red-50"
                           onClick={() => handleApproval(post._id, false)}
                         >
-                          <XCircle
-                            size={16}
-                            className="text-red-500 hover:text-red-600"
-                          />
+                          <XCircle size={16} className="text-red-500" />
                         </Button>
                       </>
+                    ) : (
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="hover:bg-yellow-50"
+                        onClick={() => handleApproval(post._id, false)}
+                      >
+                        <XCircle size={16} className="text-yellow-600" />
+                      </Button>
                     )}
 
-                    <EditPostDialog
-                      post={post}
-                      categories={categories}
-                      onSave={(updated) =>
-                        setPosts((p) =>
-                          p.map((x) => (x._id === updated._id ? updated : x))
-                        )
-                      }
-                    />
-
+                    {/* 🗑️ Устгах */}
                     <AnimatedConfirmDialog
                       triggerButton={
                         <Button variant="outline" size="icon">
@@ -329,7 +348,7 @@ export default function AdminPostsPage() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                <TableCell colSpan={8} className="text-center py-6 text-gray-500">
                   Мэдээ олдсонгүй.
                 </TableCell>
               </TableRow>
@@ -339,7 +358,7 @@ export default function AdminPostsPage() {
       </div>
 
       {/* ✅ Pagination */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-5 text-sm text-gray-500">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-6 text-sm text-gray-500">
         <div className="flex items-center gap-2">
           <span>Хуудаслалт:</span>
           <Select

@@ -21,6 +21,7 @@ import {
 import { Users, FileText, MessageSquare, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import Loader from "@/components/Loader";
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState({ users: 0, posts: 0, comments: 0 });
@@ -62,8 +63,8 @@ export default function AdminDashboardPage() {
 
   if (loading)
     return (
-      <div className="flex items-center justify-center min-h-[60vh] text-gray-500">
-        Татаж байна...
+      <div className="flex justify-center items-center w-full m-auto h-full">
+        <Loader />
       </div>
     );
 
